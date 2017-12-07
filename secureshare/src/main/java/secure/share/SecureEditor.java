@@ -6,6 +6,8 @@ import android.os.Build;
 import java.util.HashSet;
 import java.util.Set;
 
+import secure.share.inter.InterEncry;
+
 /**
  * Created by Administrator on 2017/12/5.
  */
@@ -13,17 +15,19 @@ public class SecureEditor implements SharedPreferences.Editor {
 
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor editor;
-    private EncryBean encryBean;
+    private InterEncry encrypt;
 
-    public SecureEditor(SharedPreferences preferences, EncryBean bean) {
+    public SecureEditor(SharedPreferences preferences, InterEncry bean) {
         this.sharedPreferences = preferences;
         this.editor = sharedPreferences.edit();
-        this.encryBean = bean;
+        this.encrypt = bean;
     }
 
     @Override
     public SharedPreferences.Editor putString(String key, String value) {
-        editor.putString(key, encryBean.encrypt(value));
+        String encryKey = encrypt.encrypt(key);
+        String encryValue = encrypt.encrypt(value);
+        editor.putString(encryKey, encryValue);
         return this;
     }
 
@@ -31,34 +35,33 @@ public class SecureEditor implements SharedPreferences.Editor {
     public SharedPreferences.Editor putStringSet(String key, Set<String> values) {
         Set<String> stringSet = new HashSet<>();
         for (String value : values) {
-            stringSet.add(encryBean.encrypt(value));
+            String encryValue = encrypt.encrypt(value);
+            stringSet.add(encryValue);
         }
-        editor.putStringSet(key, stringSet);
+
+        String encryKey = encrypt.encrypt(key);
+        editor.putStringSet(encryKey, stringSet);
         return this;
     }
 
     @Override
     public SharedPreferences.Editor putInt(String key, int value) {
-        editor.putString(key, encryBean.encrypt(Integer.toString(value)));
-        return this;
+        return putString(key, Integer.toString(value));
     }
 
     @Override
     public SharedPreferences.Editor putLong(String key, long value) {
-        editor.putString(key, encryBean.encrypt(Long.toString(value)));
-        return this;
+        return putString(key, Long.toString(value));
     }
 
     @Override
     public SharedPreferences.Editor putFloat(String key, float value) {
-        editor.putString(key, encryBean.encrypt(Float.toString(value)));
-        return this;
+        return putString(key, Float.toString(value));
     }
 
     @Override
     public SharedPreferences.Editor putBoolean(String key, boolean value) {
-        editor.putString(key, encryBean.encrypt(Boolean.toString(value)));
-        return this;
+        return putString(key, Boolean.toString(value));
     }
 
     @Override
@@ -83,7 +86,7 @@ public class SecureEditor implements SharedPreferences.Editor {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
             editor.apply();
         } else {
-            commit();
+            editor.commit();
         }
     }
 }

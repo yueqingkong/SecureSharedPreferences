@@ -5,9 +5,13 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import secure.share.inter.InterEncry;
+import secure.share.inter.NormalEncry;
 
 /**
  * Created by Administrator on 2017/12/5.
@@ -16,32 +20,49 @@ import java.util.Set;
 public class SecurePreferences implements SharedPreferences {
 
     private SharedPreferences sharedPreferences;
-    private EncryBean encryBean;
+    private InterEncry interEncry;
 
     public SecurePreferences(Context context, String sharename, String password, int mode) {
+        this(context, sharename, password, mode, "AES");
+    }
+
+    public SecurePreferences(Context context, String sharename, String password, int mode, String algorithm) {
         if (TextUtils.isEmpty(sharename)) {
             sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         } else {
             sharedPreferences = context.getSharedPreferences(sharename, mode);
-            encryBean = new EncryBean(password);
+            // 选择你需要的加解密模型
+            interEncry = new NormalEncry(algorithm, password);
         }
     }
 
     @Override
     public Map<String, ?> getAll() {
-        return sharedPreferences.getAll();
+        final Map<String, ?> stringMap = sharedPreferences.getAll();
+        final Map<String, String> hashMap = new HashMap<>();
+        for (Map.Entry<String, ?> entry : stringMap.entrySet()) {
+            Object cipherText = entry.getValue();
+            if (cipherText != null) {
+                String decryKey = interEncry.decrypt(entry.getKey());
+                String decryValue = interEncry.decrypt(entry.getValue().toString());
+                hashMap.put(decryKey, decryValue);
+            }
+        }
+        return hashMap;
     }
 
     @Override
     public String getString(String key, String defValue) {
-        return encryBean.decrypt(sharedPreferences.getString(key, defValue));
+        String encryKey = interEncry.encrypt(key);
+        String string = sharedPreferences.getString(encryKey, defValue);
+        return string.equals(defValue) ? string : interEncry.decrypt(string);
     }
 
     @Override
     public Set<String> getStringSet(String key, Set<String> defValues) {
         Set<String> stringSet = new HashSet<>();
         for (String value : sharedPreferences.getStringSet(key, defValues)) {
-            stringSet.add(encryBean.decrypt(value));
+            stringSet.add(interEncry.decrypt(value));
         }
         return stringSet;
     }
@@ -68,12 +89,13 @@ public class SecurePreferences implements SharedPreferences {
 
     @Override
     public boolean contains(String key) {
-        return sharedPreferences.contains(key);
+        String encryKey = interEncry.encrypt(key);
+        return sharedPreferences.contains(encryKey);
     }
 
     @Override
     public Editor edit() {
-        return new SecureEditor(sharedPreferences, encryBean);
+        return new SecureEditor(sharedPreferences, interEncry);
     }
 
     @Override

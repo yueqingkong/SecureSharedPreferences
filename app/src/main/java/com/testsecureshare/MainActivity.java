@@ -1,5 +1,6 @@
 package com.testsecureshare;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -36,7 +37,8 @@ public class MainActivity extends AppCompatActivity {
         String shareName = "shareName";
         String passWord = "qwerty";
 
-        SecurePreferences securePreferences = new SecurePreferences(activity, shareName, passWord, 0);
+        SecurePreferences securePreferences = new SecurePreferences(activity, shareName, passWord, 0,"AES");
+        SharedPreferences.Editor editor = securePreferences.edit();
 
         securePreferences.edit().putString(stringKey, "stringKey").apply();
         securePreferences.edit().putInt(intKey, 2).apply();

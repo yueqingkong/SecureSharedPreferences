@@ -1,4 +1,4 @@
-## SecureSharedPreferences
+# SecureSharedPreferences
 a simple android library for SharedPreferences that support to encrypt values with AES.
 
 # Usage
